@@ -1,0 +1,36 @@
+name: deployment-risk
+on: pull_request
+permissions:
+  pull-requests: write   # sticky PR comment
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Checkout base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base-src
+      - name: Changed files
+        id: diff
+        run: |
+          {
+            echo 'files<<__CHANGED__'
+            git diff --name-only "origin/${{ github.base_ref }}...HEAD"
+            echo '__CHANGED__'
+          } >> "$GITHUB_OUTPUT"
+      - name: Deployment risk gate
+        uses: runtimez-com/deployment-risk-action@v1
+        with:
+          manifests: k8s
+          baseline-manifests: base-src/k8s
+          changed-files: ${{ steps.diff.outputs.files }}
+          fail-on: HIGH
+          # secrets, not vars: a public run log prints a step's with: values unmasked
+          runtimez-url: ${{ secrets.RUNTIMEZ_URL }}
+          api-key: ${{ secrets.RUNTIMEZ_API_KEY }}
+          org-id: ${{ secrets.RUNTIMEZ_ORG_ID }}
+          cluster-id: ${{ secrets.RUNTIMEZ_CLUSTER_ID }}
