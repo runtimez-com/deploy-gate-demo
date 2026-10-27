@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: gate-web
   namespace: rtz-gate-demo
-  labels: {app: gate-web, app.kubernetes.io/name: gate-web, app.kubernetes.io/version: "1.27.3"}
+  labels: {app: gate-web, app.kubernetes.io/name: gate-web, app.kubernetes.io/version: "1.27.4"}
 spec:
   replicas: 2
   progressDeadlineSeconds: 300
@@ -15,7 +15,7 @@ spec:
     matchLabels: {app: gate-web}
   template:
     metadata:
-      labels: {app: gate-web, app.kubernetes.io/name: gate-web, app.kubernetes.io/version: "1.27.3"}
+      labels: {app: gate-web, app.kubernetes.io/name: gate-web, app.kubernetes.io/version: "1.27.4"}
     spec:
       automountServiceAccountToken: false
       topologySpreadConstraints:
@@ -30,7 +30,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: web
-          image: nginxinc/nginx-unprivileged:1.27.3-alpine
+          image: nginxinc/nginx-unprivileged:1.27.4-alpine
           ports:
             - {name: http, containerPort: 8080}
           resources:
