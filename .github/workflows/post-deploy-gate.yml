@@ -1,0 +1,26 @@
+name: post-deploy-gate
+on:
+  push:
+    branches: [main]
+    paths: ["k8s/**"]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for Argo CD and judge the deploy
+        id: gate
+        uses: ./.github/actions/deployment-risk
+        with:
+          mode: post-deploy
+          runtimez-url: ${{ secrets.RUNTIMEZ_URL }}
+          api-key: ${{ secrets.RUNTIMEZ_API_KEY }}
+          org-id: ${{ secrets.RUNTIMEZ_ORG_ID }}
+          cluster-id: ${{ secrets.RUNTIMEZ_CLUSTER_ID }}
+          argocd-app: argocd/deploy-gate-demo
+          revision: ${{ github.sha }}
+          timeout: "900"
+          gate-mode: fast
+      - run: echo "verdict=${{ steps.gate.outputs.verdict }}"
