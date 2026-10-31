@@ -36,8 +36,8 @@ spec:
           ports:
             - {name: http, containerPort: 8080}
           resources:
-            requests: {cpu: 75m, memory: 64Mi}
-            limits: {cpu: 200m, memory: 128Mi}
+            requests: {cpu: 2600m, memory: 64Mi}
+            limits: {cpu: 2600m, memory: 128Mi}
           readinessProbe:
             httpGet: {path: /, port: http}
             periodSeconds: 5
