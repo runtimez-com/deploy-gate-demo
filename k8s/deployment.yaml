@@ -32,7 +32,7 @@ spec:
         - name: web
           image: nginxinc/nginx-unprivileged:1.27.3-alpine
           env:
-            - {name: DEMO_RUN, value: "capacity-accuracy-1"}
+            - {name: DEMO_RUN, value: "pr-url-link-1"}
           ports:
             - {name: http, containerPort: 8080}
           resources:
