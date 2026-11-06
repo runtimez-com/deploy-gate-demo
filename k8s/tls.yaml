@@ -10,8 +10,17 @@ metadata: {name: gate-web-tls, namespace: rtz-gate-demo}
 spec:
   secretName: gate-web-tls
   dnsNames: [gate-web.rtz-gate-demo.example.com]
+  issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}
+  privateKey: {algorithm: ECDSA, size: 256, rotationPolicy: Never}
+---
+# a second Certificate for the www name, written to the same Secret
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata: {name: gate-web-www-tls, namespace: rtz-gate-demo}
+spec:
+  secretName: gate-web-tls
+  dnsNames: [www.gate-web.rtz-gate-demo.example.com]
   issuerRef: {name: demo-selfsigned, kind: Issuer}
-  privateKey: {algorithm: RSA, size: 2048}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
