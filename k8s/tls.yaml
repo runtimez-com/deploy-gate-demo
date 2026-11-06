@@ -1,0 +1,24 @@
+# TLS for gate-web through cert-manager: a self-signed Issuer, the Certificate, and the Ingress that serves it.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata: {name: demo-selfsigned, namespace: rtz-gate-demo}
+spec: {selfSigned: {}}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata: {name: gate-web-tls, namespace: rtz-gate-demo}
+spec:
+  secretName: gate-web-tls
+  dnsNames: [gate-web.rtz-gate-demo.example.com]
+  issuerRef: {name: demo-selfsigned, kind: Issuer}
+  privateKey: {algorithm: RSA, size: 2048}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: {name: gate-web, namespace: rtz-gate-demo}
+spec:
+  ingressClassName: nginx
+  tls: [{hosts: [gate-web.rtz-gate-demo.example.com], secretName: gate-web-tls}]
+  rules:
+    - host: gate-web.rtz-gate-demo.example.com
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: gate-web, port: {number: 80}}}}]}
