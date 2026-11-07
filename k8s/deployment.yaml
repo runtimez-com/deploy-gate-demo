@@ -16,8 +16,10 @@ spec:
   template:
     metadata:
       labels: {app: gate-web, app.kubernetes.io/name: gate-web, app.kubernetes.io/version: "1.27.3"}
+      annotations: {karpenter.sh/do-not-disrupt: "true"}
     spec:
       automountServiceAccountToken: false
+      nodeSelector: {karpenter.sh/nodepool: batch-spot}
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
