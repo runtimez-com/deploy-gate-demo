@@ -19,6 +19,8 @@ spec:
     spec:
       automountServiceAccountToken: false
       nodeSelector: {karpenter.sh/nodepool: rtzkd-capped}
+      tolerations:
+        - {key: rtzkd, operator: Equal, value: capped, effect: NoSchedule}
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
