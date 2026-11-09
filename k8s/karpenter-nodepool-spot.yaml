@@ -10,7 +10,7 @@ spec:
     consolidateAfter: 1m
     consolidationPolicy: WhenEmptyOrUnderutilized
   limits:
-    cpu: "16"
+    cpu: "4"
   template:
     spec:
       expireAfter: 168h
