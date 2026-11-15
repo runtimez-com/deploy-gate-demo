@@ -16,4 +16,7 @@ spec:
           rules:
             http:
               - {method: GET, path: "/.*"}
-
+    - fromEntities: [world]
+      toPorts:
+        - ports:
+            - {port: "8080", protocol: TCP}
