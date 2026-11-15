@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: gate-web
   namespace: rtz-gate-demo
+  annotations:
+    service.cilium.io/lb-algorithm: roundrobin
 spec:
   type: ClusterIP
   selector: {app: gate-web}
