@@ -1,0 +1,78 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: {name: scn-pr-audit-to-enforce}
+spec:
+  validationFailureAction: Audit
+  rules:
+  - name: check
+    match:
+      any:
+      - resources: {kinds: [Pod], namespaces: [scn-kyverno], selector: {matchLabels: {app: scn-other}}}
+    validate:
+      message: team label required
+      pattern: {metadata: {labels: {team: "?*"}}}
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: {name: scn-pr-weaken}
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: check
+    match:
+      any:
+      - resources: {kinds: [Pod], namespaces: [scn-pr-none], selector: {matchLabels: {app: scn-pr-none}}}
+    validate:
+      message: team label required
+      pattern: {metadata: {labels: {team: "?*"}}}
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: {name: scn-pr-failure}
+spec:
+  validationFailureAction: Audit
+  failurePolicy: Ignore
+  rules:
+  - name: check
+    match:
+      any:
+      - resources: {kinds: [Pod], namespaces: [scn-pr-none], selector: {matchLabels: {app: scn-pr-none}}}
+    validate:
+      message: team label required
+      pattern: {metadata: {labels: {team: "?*"}}}
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: {name: scn-pr-netpol}
+spec:
+  rules:
+  - name: default-deny
+    match: {any: [{resources: {kinds: [Namespace], names: [scn-pr-none]}}]}
+    generate:
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      name: scn-pr-default-deny
+      namespace: "{{request.object.metadata.name}}"
+      synchronize: true
+      data: {spec: {podSelector: {}, policyTypes: [Ingress]}}
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: {name: scn-pr-mutate-existing}
+spec:
+  mutateExistingOnPolicyUpdate: false
+  rules:
+  - name: label-secrets
+    match: {any: [{resources: {kinds: [ConfigMap], namespaces: [scn-pr-none]}}]}
+    mutate:
+      targets: [{apiVersion: v1, kind: Secret, namespace: scn-pr-none}]
+      patchStrategicMerge: {metadata: {labels: {scn: pr}}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: scn-pr-control, namespace: scn-kyverno}
+spec:
+  selector: {matchLabels: {app: scn-pr-control}}
+  template:
+    metadata: {labels: {app: scn-pr-control}}
+    spec: {containers: [{name: pause, image: "registry.k8s.io/pause:3.9"}]}
