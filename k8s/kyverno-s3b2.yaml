@@ -1,0 +1,30 @@
+# deploy-gate-demo stacked PR (never merged): three Deployments in scn-kyverno.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: scn-s3b2-signed-gate, namespace: scn-kyverno}
+spec:
+  selector: {matchLabels: {app: scn-s3b2-signed-gate}}
+  template:
+    metadata: {labels: {app: scn-s3b2-signed-gate}}
+    spec:
+      containers: [{name: app, image: "ghcr.io/scn-s3b2/app:1.0"}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: scn-s3b2-audit-only, namespace: scn-kyverno}
+spec:
+  selector: {matchLabels: {app: scn-s3b2-audit-only}}
+  template:
+    metadata: {labels: {app: scn-s3b2-audit-only}}
+    spec:
+      containers: [{name: app, image: "ghcr.io/scn-s3b2-audit/app:1.0"}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: scn-s3b2-unmatched, namespace: scn-kyverno}
+spec:
+  selector: {matchLabels: {app: scn-s3b2-unmatched}}
+  template:
+    metadata: {labels: {app: scn-s3b2-unmatched}}
+    spec:
+      containers: [{name: app, image: "nginx:1.27.3"}]
