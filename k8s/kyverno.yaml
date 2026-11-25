@@ -2,7 +2,7 @@ apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata: {name: scn-pr-audit-to-enforce}
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   rules:
   - name: check
     match:
@@ -16,7 +16,7 @@ apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata: {name: scn-pr-weaken}
 spec:
-  validationFailureAction: Enforce
+  validationFailureAction: Audit
   rules:
   - name: check
     match:
@@ -31,7 +31,6 @@ kind: ClusterPolicy
 metadata: {name: scn-pr-failure}
 spec:
   validationFailureAction: Audit
-  failurePolicy: Ignore
   rules:
   - name: check
     match:
@@ -43,24 +42,9 @@ spec:
 ---
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
-metadata: {name: scn-pr-netpol}
-spec:
-  rules:
-  - name: default-deny
-    match: {any: [{resources: {kinds: [Namespace], names: [scn-pr-none]}}]}
-    generate:
-      apiVersion: networking.k8s.io/v1
-      kind: NetworkPolicy
-      name: scn-pr-default-deny
-      namespace: "{{request.object.metadata.name}}"
-      synchronize: true
-      data: {spec: {podSelector: {}, policyTypes: [Ingress]}}
----
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
 metadata: {name: scn-pr-mutate-existing}
 spec:
-  mutateExistingOnPolicyUpdate: false
+  mutateExistingOnPolicyUpdate: true
   rules:
   - name: label-secrets
     match: {any: [{resources: {kinds: [ConfigMap], namespaces: [scn-pr-none]}}]}
@@ -75,4 +59,68 @@ spec:
   selector: {matchLabels: {app: scn-pr-control}}
   template:
     metadata: {labels: {app: scn-pr-control}}
+    spec: {containers: [{name: pause, image: "registry.k8s.io/pause:3.9"}]}
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: {name: scn-pr-new-enforce}
+spec:
+  validationFailureAction: Enforce
+  rules:
+  - name: check
+    match:
+      any:
+      - resources: {kinds: [Pod], namespaces: [scn-kyverno], selector: {matchLabels: {app: scn-web}}}
+    validate:
+      message: team label required
+      pattern: {metadata: {labels: {team: "?*"}}}
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: {name: scn-pr-audit-clean}
+spec:
+  validationFailureAction: Audit
+  rules:
+  - name: check
+    match:
+      any:
+      - resources: {kinds: [Pod], namespaces: [scn-kyverno], selector: {matchLabels: {app: scn-web}}}
+    validate:
+      message: team label required
+      pattern: {metadata: {labels: {team: "?*"}}}
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata: {name: scn-pr-exempt-web, namespace: scn-kyverno}
+spec:
+  exceptions: [{policyName: scn-pr-new-enforce, ruleNames: [check]}]
+  match:
+    any:
+    - resources: {kinds: [Pod], namespaces: [scn-kyverno], selector: {matchLabels: {app: scn-web}}}
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata: {name: scn-pr-exempt-missing, namespace: scn-kyverno}
+spec:
+  exceptions: [{policyName: scn-pr-missing, ruleNames: [check]}]
+  match:
+    any:
+    - resources: {kinds: [Pod], namespaces: [scn-kyverno], selector: {matchLabels: {app: scn-web}}}
+---
+apiVersion: kyverno.io/v2
+kind: CleanupPolicy
+metadata: {name: scn-pr-sweep, namespace: scn-kyverno}
+spec:
+  schedule: "*/30 * * * *"
+  match:
+    any:
+    - resources: {kinds: [Pod]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: scn-pr-ttl, namespace: scn-kyverno}
+spec:
+  selector: {matchLabels: {app: scn-pr-ttl}}
+  template:
+    metadata: {labels: {app: scn-pr-ttl, cleanup.kyverno.io/ttl: 2h}}
     spec: {containers: [{name: pause, image: "registry.k8s.io/pause:3.9"}]}
