@@ -1,0 +1,37 @@
+# Kyverno <=1.18 applies ONE action per policy (the first rule that sets one).
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: {name: scn-mixed-audit-first}
+spec:
+  rules:
+  - name: in-scn-kyverno
+    match: {any: [{resources: {kinds: [Pod], namespaces: [scn-kyverno]}}]}
+    validate:
+      failureAction: Audit
+      message: "label team is required"
+      pattern: {metadata: {labels: {team: "?*"}}}
+  - name: in-rtz-gate-demo
+    match: {any: [{resources: {kinds: [Pod], namespaces: [rtz-gate-demo]}}]}
+    validate:
+      failureAction: Enforce
+      message: "label team is required"
+      pattern: {metadata: {labels: {team: "?*"}}}
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata: {name: scn-mixed-enforce-first}
+spec:
+  rules:
+  - name: in-scn-kyverno
+    match: {any: [{resources: {kinds: [Pod], namespaces: [scn-kyverno]}}]}
+    validate:
+      failureAction: Enforce
+      message: "label team is required"
+      pattern: {metadata: {labels: {team: "?*"}}}
+  - name: in-rtz-gate-demo
+    match: {any: [{resources: {kinds: [Pod], namespaces: [rtz-gate-demo]}}]}
+    validate:
+      failureAction: Audit
+      message: "label team is required"
+      pattern: {metadata: {labels: {team: "?*"}}}
